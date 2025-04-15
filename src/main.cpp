@@ -1,6 +1,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <math.h>
 #include "i2c.h"
 #include "pwm.h"
 #include "timer.h"
@@ -14,22 +15,21 @@ void display_frowny();
 // MPU6050 constants
 #define MPU6050_ADDRESS 0x68
 #define POWER_MGMT_1 0x6B
-#define ACCEL_YOUT_H 0x3D
-#define ACCEL_ZOUT_H 0x3F
-#define THRESHOLD 15000  // ~45 degree threshold (example)
+#define THRESHOLD_ANGLE 45.0
+#define PI 3.14159265
 
 // State enums
 enum AlarmState { ALARM_OFF, ALARM_ON };
 enum FaceState { SMILEY, FROWNY };
 
-// Helper functions
-int16_t readAxis(uint8_t highReg);
+// Function declarations
 void updateDisplay(FaceState state);
+float getAccelAngle(float a1, float a2, float a3);
 
 int main() {
     // Init peripherals
     initI2C();
-    SPI_MASTER_Init(); // use friend's SPI function
+    SPI_MASTER_Init();
     initPWM();
     initSwitchPD2();
     initTimer1();
@@ -45,48 +45,64 @@ int main() {
     FaceState faceState = SMILEY;
 
     while (1) {
-        // Read Y and Z axes
-        int16_t accY = readAxis(ACCEL_YOUT_H);
-        int16_t accZ = readAxis(ACCEL_ZOUT_H);
+        int16_t x_val, y_val, z_val;
+        float x_accel, y_accel, z_accel;
+        float roll, pitch;
 
-        // Debug prints (optional - use only if Serial enabled)
-        // Serial.print("Y: "); Serial.print(accY);
-        // Serial.print(" Z: "); Serial.println(accZ);
+        // --- Read X axis ---
+        Read_from(MPU6050_ADDRESS << 1, 0x3B); // ACCEL_XOUT_H
+        x_val = Read_data();
+        Read_from(MPU6050_ADDRESS << 1, 0x3C); // ACCEL_XOUT_L
+        x_val = (x_val << 8) | Read_data();
+        x_accel = x_val / 16384.0;
 
-        // Check if tilt exceeds threshold
-        bool aboveThreshold = (abs(accY) > THRESHOLD || abs(accZ) > THRESHOLD);
+        // --- Read Y axis ---
+        Read_from(MPU6050_ADDRESS << 1, 0x3D); // ACCEL_YOUT_H
+        y_val = Read_data();
+        Read_from(MPU6050_ADDRESS << 1, 0x3E); // ACCEL_YOUT_L
+        y_val = (y_val << 8) | Read_data();
+        y_accel = y_val / 16384.0;
 
-        // Alarm trigger logic
-        if (aboveThreshold && alarmState == ALARM_OFF) {
+        // --- Read Z axis ---
+        Read_from(MPU6050_ADDRESS << 1, 0x3F); // ACCEL_ZOUT_H
+        z_val = Read_data();
+        Read_from(MPU6050_ADDRESS << 1, 0x40); // ACCEL_ZOUT_L
+        z_val = (z_val << 8) | Read_data();
+        z_accel = (z_val / 16384.0) - 0.07; // adjust for calibration
+
+        // --- Calculate roll and pitch in degrees ---
+        roll = atan2(y_accel, sqrt(x_accel * x_accel + z_accel * z_accel)) * 180 / PI;
+        pitch = atan2(x_accel, sqrt(y_accel * y_accel + z_accel * z_accel)) * 180 / PI;
+
+        StopI2C_Trans();
+
+        // Tilt detection
+        bool tilted = (fabs(roll) > THRESHOLD_ANGLE || fabs(pitch) > THRESHOLD_ANGLE);
+
+        // Alarm logic
+        if (tilted && alarmState == ALARM_OFF) {
             alarmState = ALARM_ON;
             faceState = FROWNY;
             startBuzzer();
         }
 
-        // Button press to silence
         if (alarmState == ALARM_ON && IsSwitchPressed()) {
             alarmState = ALARM_OFF;
             faceState = SMILEY;
             stopBuzzer();
         }
 
-        // Update display based on state
+        // Display state
         updateDisplay(faceState);
 
         delayMs(100);
     }
 }
 
-unsigned char readAxis(unsigned char highReg) {
-    unsigned char high = readFrom(MPU6050_ADDRESS << 1, highReg);
-    unsigned char low = readFrom(MPU6050_ADDRESS << 1, highReg + 1);
-    return (int16_t)((high << 8) | low);
-}
-
 void updateDisplay(FaceState state) {
     if (state == SMILEY) {
-        display_smiley(); // from spi.cpp
+        display_smiley();
     } else {
-        display_frowny(); // from spi.cpp
+        display_frowny();
     }
 }
