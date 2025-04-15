@@ -4,7 +4,7 @@
 // Constants
 #define BUZZER_PIN PE5 // OC2B (on ATmega2560)
 
-void InitPWM() {
+void initPWM() {
     // Set buzzer pin as output
     DDRD |= (1 << BUZZER_PIN);
 

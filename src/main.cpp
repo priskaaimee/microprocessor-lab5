@@ -28,18 +28,18 @@ void updateDisplay(FaceState state);
 
 int main() {
     // Init peripherals
-    InitI2C();
+    initI2C();
     SPI_MASTER_Init(); // use friend's SPI function
-    InitPWM();
-    InitSwitch();
-    InitTimer1();
+    initPWM();
+    initSwitchPD2();
+    initTimer1();
     sei(); // Enable global interrupts
 
     // Wake up MPU6050
-    StartI2C_Trans(MPU6050_ADDRESS << 1);
-    Write(POWER_MGMT_1);
-    Write(0x00);
-    StopI2C_Trans();
+    startI2C_Trans(MPU6050_ADDRESS << 1);
+    write(POWER_MGMT_1);
+    write(0x00);
+    stopI2C_Trans();
 
     AlarmState alarmState = ALARM_OFF;
     FaceState faceState = SMILEY;
@@ -60,26 +60,26 @@ int main() {
         if (aboveThreshold && alarmState == ALARM_OFF) {
             alarmState = ALARM_ON;
             faceState = FROWNY;
-            StartChirp();
+            startBuzzer();
         }
 
         // Button press to silence
         if (alarmState == ALARM_ON && IsSwitchPressed()) {
             alarmState = ALARM_OFF;
             faceState = SMILEY;
-            StopChirp();
+            stopBuzzer();
         }
 
         // Update display based on state
         updateDisplay(faceState);
 
-        Delay_ms(100);
+        delayMs(100);
     }
 }
 
-int16_t readAxis(uint8_t highReg) {
-    uint8_t high = Read_from(MPU6050_ADDRESS << 1, highReg);
-    uint8_t low = Read_from(MPU6050_ADDRESS << 1, highReg + 1);
+unsigned char readAxis(unsigned char highReg) {
+    unsigned char high = readFrom(MPU6050_ADDRESS << 1, highReg);
+    unsigned char low = readFrom(MPU6050_ADDRESS << 1, highReg + 1);
     return (int16_t)((high << 8) | low);
 }
 
