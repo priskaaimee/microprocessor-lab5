@@ -4,16 +4,13 @@
 /*
  * Initializes pull-up resistor on PB3 and sets it into input mode
  */
-void initSwitchPD2(){
-    PORTD |= (1 << PD2); //set pull-up resistor on PD2
-    DDRD &= ~(1 << DDD2); //set PD2 as input
+void initSwitchPD3(){
 
-    PCICR |= (1 << PCIE0); //enable pin change interrupt 0
-    PCMSK0 |= (1 << PCINT2); //enable pin change interrupt on PD2  
-}
+    DDRD &= ~(1 << DDD3);   // initialize D3 (pin 18) as input
+    PORTD |= (1 << PORTD3); // enable pull up resistor
+    EIMSK |= (1 << INT3);   // Enable INT3 interrupt
 
-void silence(){
-    //silence the buzzer
-    PORTB &= ~(1 << PB0); //set PB0 low
-    DDRB &= ~(1 << DDB0); //set PB0 as input
+    //add comment for this
+    EICRA &= ~(1 << ISC31);
+    EICRA &= ~(1 << ISC30);
 }

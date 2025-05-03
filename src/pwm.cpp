@@ -1,32 +1,39 @@
-#include <avr/io.h>
-#include <util/delay.h>
+#include "timer.h"
 
-// Constants
-#define BUZZER_PIN PE5 // OC2B (on ATmega2560)
+#include <avr/io.h>
+
 
 void initPWM() {
     // Set buzzer pin as output
-    DDRD |= (1 << BUZZER_PIN);
+    DDRE |= (1 << PE3);
 
-    // Set Timer2 to Fast PWM mode, non-inverting on OC2B
-    TCCR2A |= (1 << COM2B1) | (1 << WGM21) | (1 << WGM20); // Fast PWM
-    TCCR2B |= (1 << WGM22) | (1 << CS21); // prescaler 8
+    TCCR3B &= ~(1 << WGM33);               // set WGM3 to 0
+    TCCR3A |= (1 << WGM31) | (1 << WGM30); // set WGM1 and WGM0 to 1
+    TCCR3B |= (1 << WGM32);                // set WGM2 to 1
 
-    // Initial compare value for chirp (will be varied)
-    OCR2A = 255; // TOP
-    OCR2B = 127; // 50% duty cycle
+    // Set non-inverting mode for OCR3A (clear on compare match, set on bottom)
+    TCCR3A |= (1 << COM3A1);
+    TCCR3A &= ~(1 << COM3A0);
+
+    // Set presclar to 1 for Fast PWM, creating constant signal
+    TCCR3B |= (1 << CS30);
+    TCCR3B &= ~((1 << CS31) | (1 << CS32));
+
+    OCR3A = 0;  // Initial duty cycle 0
 }
 
-void startBuzzer() {
-    for (int freq = 100; freq <= 800; freq += 20) {
-        uint16_t top = (16000000UL / (8UL * freq)) - 1;
-        if (top > 255) top = 255; // clamp
-        OCR2A = top;
-        OCR2B = top / 2; // 50% duty
-        _delay_ms(50); // Delay to create chirp ramp
-    }
+void changeDutyCycle(float dutyCycle) {
+    OCR3A = 1023 * dutyCycle;
+}
+
+void chirpBuzzer(float dutyCycle) // for buzzer to chirp (on, off,on,off)
+{
+    changeDutyCycle(dutyCycle); //start buzzer
+    delayMs(100);          // delay for chirp
+    changeDutyCycle(0);    // no sound in buzzer
+    delayMs(100);          // delay for chirp
 }
 
 void stopBuzzer() {
-    OCR2B = 0; // No output
+    OCR3A = 0; // No output
 }
