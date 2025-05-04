@@ -31,7 +31,7 @@ enum AlarmState { ALARM_OFF, ALARM_ON };
 AlarmState alarmState = ALARM_OFF;
 
 // Threshold for tilt detection
-#define THRESHOLD_ANGLE 30.0
+#define THRESHOLD_ANGLE 45.0
 
 
 int main() {
