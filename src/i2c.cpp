@@ -14,7 +14,6 @@
 
 void initI2C()
 {
-
     PRR0 &= ~(1 << PRTWI); // turn on I2C
 
     // set prescalar 1 meaning  4^1 = 4 (01)
@@ -47,6 +46,7 @@ void Write(unsigned char data)
     TWCR = (1 << TWINT) | (1 << TWEN); // enable Twin wire interface
     WAIT_TRANSFER();                   // wait until data successfully transfered
 }
+
 void Read_from(unsigned char SLA, unsigned char MEMADDRESS)
 {
     StartI2C_Trans(SLA);                              // set the slave address
@@ -63,6 +63,7 @@ void Read_from(unsigned char SLA, unsigned char MEMADDRESS)
 
     StopI2C_Trans(); // stop the transmission
 }
+
 unsigned char Read_data()
 {
     return TWDR; // return what is inside of TWDR
