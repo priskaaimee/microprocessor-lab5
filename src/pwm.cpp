@@ -33,30 +33,23 @@ void playFrequency(float frequency, float dutyCycle) {
     // Calculate TOP value for desired frequency
     uint16_t top = (uint16_t)(timerClock / frequency);
 
-    // Set Fast PWM using ICR3 as TOP
-    TCCR3A |= (1 << WGM31);
-    TCCR3A &= ~(1 << WGM30);
-    TCCR3B |= (1 << WGM32) | (1 << WGM33);
-
-    // Non-inverting mode
-    TCCR3A |= (1 << COM3A1);
-    TCCR3A &= ~(1 << COM3A0);
-
-    // Prescaler = 8
-    TCCR3B &= ~((1 << CS32) | (1 << CS30));
-    TCCR3B |= (1 << CS31);
-
     ICR3 = top; // Set frequency
     OCR3A = (uint16_t)(top * dutyCycle); // Set duty cycle
 }
 
 void chirpBuzzer(float dutyCycle) {// for buzzer to chirp (on, off,on,off)
-    playFrequency(1000, 0.5); // Play 1kHz tone at 50% duty cycle
-    delayMs(500);
-    playFrequency(2000, 0.5); // Play 2kHz tone
-    delayMs(500);
+    TCCR3A |= (1 << COM3A1);
+    for (int i = 1000; i < 4000; i++) {
+        playFrequency(i + 15, dutyCycle); // Play frequency from 1kHz to 4kHz
+        delayMs(1); // Delay for 100ms
+    }
+    for (int i = 4000; i > 1015; i--) {
+        playFrequency(i - 15, dutyCycle); // Play frequency from 4kHz to 1kHz
+        delayMs(1); // Delay for 100ms
+    }
 }
 
 void stopBuzzer() {
     OCR3A = 0; // No output
+    TCCR3A &= ~(1 << COM3A1);
 }

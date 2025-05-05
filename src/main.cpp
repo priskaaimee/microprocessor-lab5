@@ -147,7 +147,7 @@ int main() {
         // Otherwise, set the faceState to SMILE.
 
         if (alarmState) { // check to turn on buzzer
-            chirpBuzzer(0.9); // buzzer chirping
+            chirpBuzzer(0.5); // buzzer chirping
         }
         // If the alarmState is ALARM_ON, call the chirpBuzzer function to activate the buzzer.
 
