@@ -100,7 +100,7 @@ int main() {
     Serial.println(pitch);
 
     // Check if the tilt exceeds the threshold angle (45 degrees)
-    if (smooth_roll > 0.45 || smooth_roll < -0.45 || smooth_pitch > 0.45 || smooth_pitch < -0.45) {
+    if (smooth_roll > 0.785 || smooth_roll < -0.785 || smooth_pitch > 0.785 || smooth_pitch < -0.785) {
       faceState = SAD;       // Display a sad face on the LED matrix
       alarmState = ALARM_ON; // Turn on the alarm (buzzer)
     } else {
