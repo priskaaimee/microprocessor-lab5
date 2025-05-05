@@ -15,7 +15,6 @@ DDRB &= ~(1 << DDB3);
 // set SS high at first
 PORTB |= (1 << PORTB0);
 // enable the interrupt, SPI, master mode, CPOL, CPHA, default clock, and fosc/128
-//ADXL345 CPOL = 1, CPHA = 1
 SPCR |= (1 << SPIE) | (1 << SPE) | (1 << MSTR) | (1 << CPOL)| (1 << CPHA)| (1 << SPR1) | (1 << SPR0);
 
 }
